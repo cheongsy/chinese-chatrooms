@@ -35,9 +35,13 @@ export async function explainMessage(text: string): Promise<Explanation> {
 
   const block = response.content.find((b) => b.type === "text");
   const raw = block && block.type === "text" ? block.text : "{}";
+  const jsonText = raw
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/```\s*$/, "");
 
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(jsonText);
     return {
       pinyin: parsed.pinyin ?? "",
       gloss: parsed.gloss ?? "",
