@@ -11,20 +11,23 @@ export default function ChatRoom({
   room,
   initialMessages,
   currentUserId,
+  currentUsername,
 }: {
   room: Room;
   initialMessages: StoredMessage[];
   currentUserId: string;
+  currentUsername: string;
 }) {
   const [messages, setMessages] = useState<StoredMessage[]>(initialMessages);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [showPinyin, setShowPinyin] = useState(true);
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
   const profileCache = useRef<Map<string, { username: string; is_ai: boolean }>>(
-    new Map(
-      initialMessages.map((m) => [m.user_id, m.author] as const)
-    )
+    new Map([
+      ...initialMessages.map((m) => [m.user_id, m.author] as const),
+      [currentUserId, { username: currentUsername, is_ai: false }] as const,
+    ])
   );
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -92,14 +95,29 @@ export default function ChatRoom({
     setSending(true);
     setInput("");
 
-    const { error } = await supabase.from("messages").insert({
-      room_id: room.id,
-      user_id: currentUserId,
-      content,
-    });
+    const { data, error } = await supabase
+      .from("messages")
+      .insert({
+        room_id: room.id,
+        user_id: currentUserId,
+        content,
+      })
+      .select("id, content, created_at, user_id")
+      .single();
 
     setSending(false);
     if (error) return;
+
+    if (data) {
+      const author = profileCache.current.get(data.user_id) ?? {
+        username: "You",
+        is_ai: false,
+      };
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === data.id)) return prev;
+        return [...prev, { ...data, author }];
+      });
+    }
 
     fetch("/api/ai-reply", {
       method: "POST",

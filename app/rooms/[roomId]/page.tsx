@@ -27,6 +27,12 @@ export default async function RoomPage({
     notFound();
   }
 
+  const { data: currentProfile } = await supabase
+    .from("profiles")
+    .select("username")
+    .eq("id", userData.user.id)
+    .single();
+
   const { data: messagesRaw } = await supabase
     .from("messages")
     .select("id, content, created_at, user_id, profiles(username, is_ai)")
@@ -57,6 +63,7 @@ export default async function RoomPage({
         room={room}
         initialMessages={initialMessages}
         currentUserId={userData.user.id}
+        currentUsername={currentProfile?.username ?? "You"}
       />
     </>
   );
