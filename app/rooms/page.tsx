@@ -1,10 +1,17 @@
 import { createClient } from "@/lib/supabase/server";
+import { ensureProfile } from "@/lib/supabase/ensure-profile";
 import NavBar from "@/components/NavBar";
 import RoomCard from "@/components/RoomCard";
 import type { Room } from "@/lib/supabase/types";
 
 export default async function RoomsPage() {
   const supabase = await createClient();
+
+  const { data: userData } = await supabase.auth.getUser();
+  if (userData.user) {
+    await ensureProfile(supabase, userData.user);
+  }
+
   const { data: rooms } = await supabase
     .from("rooms")
     .select("*")

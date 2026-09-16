@@ -22,6 +22,7 @@ export default function ChatRoom({
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [showPinyin, setShowPinyin] = useState(true);
+  const [sendError, setSendError] = useState<string | null>(null);
   const [supabase] = useState(() => createClient());
   const profileCache = useRef<Map<string, { username: string; is_ai: boolean }>>(
     new Map([
@@ -94,6 +95,7 @@ export default function ChatRoom({
 
     setSending(true);
     setInput("");
+    setSendError(null);
 
     const { data, error } = await supabase
       .from("messages")
@@ -106,7 +108,11 @@ export default function ChatRoom({
       .single();
 
     setSending(false);
-    if (error) return;
+    if (error) {
+      setSendError(`Couldn't send that message: ${error.message}`);
+      setInput(content);
+      return;
+    }
 
     if (data) {
       const author = profileCache.current.get(data.user_id) ?? {
@@ -155,21 +161,24 @@ export default function ChatRoom({
         <div ref={bottomRef} />
       </div>
 
-      <form onSubmit={handleSend} className="border-t border-gray-200 p-3 flex gap-2">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type a message in Chinese or English..."
-          className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <button
-          type="submit"
-          disabled={sending || !input.trim()}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-        >
-          Send
-        </button>
-      </form>
+      <div className="border-t border-gray-200 p-3">
+        {sendError && <p className="text-sm text-red-600 mb-2">{sendError}</p>}
+        <form onSubmit={handleSend} className="flex gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Type a message in Chinese or English..."
+            className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            disabled={sending || !input.trim()}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            Send
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

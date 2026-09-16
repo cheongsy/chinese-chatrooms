@@ -1,5 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { ensureProfile } from "@/lib/supabase/ensure-profile";
 import NavBar from "@/components/NavBar";
 import ChatRoom from "@/components/ChatRoom";
 import type { ChatMessageData } from "@/components/ChatMessage";
@@ -16,6 +17,8 @@ export default async function RoomPage({
   if (!userData.user) {
     redirect("/login");
   }
+
+  await ensureProfile(supabase, userData.user);
 
   const { data: room } = await supabase
     .from("rooms")
