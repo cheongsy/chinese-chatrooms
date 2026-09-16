@@ -27,12 +27,17 @@ export default function NavBar() {
           My Vocab
         </Link>
       </div>
-      <button
-        onClick={handleSignOut}
-        className="text-sm text-gray-600 hover:text-black"
-      >
-        Sign out
-      </button>
+      <div className="flex gap-4 items-center">
+        <Link href="/account" className="text-sm text-gray-600 hover:text-black">
+          Account
+        </Link>
+        <button
+          onClick={handleSignOut}
+          className="text-sm text-gray-600 hover:text-black"
+        >
+          Sign out
+        </button>
+      </div>
     </nav>
   );
 }
