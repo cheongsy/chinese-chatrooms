@@ -1,7 +1,17 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npx --yes create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias \"@/*\" --use-npm --yes)"
+      "Bash(npx --yes create-next-app@latest . --typescript --tailwind --eslint --app --src-dir=false --import-alias \"@/*\" --use-npm --yes)",
+      "Bash(npm install *)",
+      "Bash(mkdir -p lib/supabase supabase app/\\\\\\(auth\\\\\\)/login app/\\\\\\(auth\\\\\\)/signup app/rooms app/vocab \"app/api/translate\" \"app/api/explain\" \"app/api/ai-reply\" components && echo done)",
+      "Bash(node -e ' *)",
+      "Bash(mkdir -p \"app/rooms/[roomId]\" && echo done)",
+      "Bash(npx tsc *)",
+      "Bash(xargs grep -l \"GenericSchema\")",
+      "Bash(npx eslint *)",
+      "Bash(npm run *)",
+      "Read(//c/Users/werty/**)",
+      "Bash(git add *)"
     ]
   }
 }

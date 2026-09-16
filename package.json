@@ -1,5 +1,5 @@
 {
-  "name": "scratch-2026-09-16-b13fcb",
+  "name": "chinese-chatrooms",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,7 +9,11 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.126.0",
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.116.0",
     "next": "16.3.5",
+    "pinyin-pro": "^3.29.4",
     "react": "19.2.8",
     "react-dom": "19.2.8"
   },

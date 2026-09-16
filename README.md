@@ -1,36 +1,78 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 聊天中文 — Chinese Language-Exchange Chatrooms
 
-## Getting Started
+A web app for practicing Chinese in topic-based chatrooms. Every room has a
+real LLM-powered AI conversation partner so it's never empty, and every
+message can be translated or explained (pinyin, gloss, grammar notes) on
+demand.
 
-First, run the development server:
+## Features
+
+- Email/password sign up and login (Supabase Auth)
+- Topic/level chatrooms (beginner small talk, HSK3 travel, food, advanced discussion)
+- Real-time chat (Supabase Realtime)
+- An AI persona in every room that replies in Chinese via the Claude API
+- Per-message **Translate** (DeepL) and **Explain** (Claude: pinyin + gloss + grammar note)
+- Toggleable pinyin annotations on any Chinese text
+- Click any Chinese character in a message to save it to "My Vocab"
+
+## Stack
+
+Next.js (App Router) + TypeScript + Tailwind CSS, Supabase (Postgres, Auth,
+Realtime), DeepL API, Anthropic (Claude) API, `pinyin-pro`.
+
+## Setup
+
+### 1. Install dependencies
+
+```bash
+npm install
+```
+
+### 2. Create a Supabase project
+
+1. Create a free project at [supabase.com](https://supabase.com).
+2. In the SQL Editor, run [`supabase/schema.sql`](supabase/schema.sql). This
+   creates all tables, Row Level Security policies, and seeds four chatrooms
+   with their AI personas.
+3. In **Project Settings → API**, copy the project URL, `anon` public key,
+   and `service_role` secret key.
+
+### 3. Get API keys
+
+- **DeepL**: a free API key from [deepl.com/pro-api](https://www.deepl.com/pro-api).
+  (If you're on a paid DeepL plan, change the endpoint in
+  [`lib/translate.ts`](lib/translate.ts) from `api-free.deepl.com` to `api.deepl.com`.)
+- **Anthropic**: an API key from [console.anthropic.com](https://console.anthropic.com/).
+
+### 4. Configure environment variables
+
+Copy `.env.example` to `.env.local` and fill in the values from steps 2 and 3:
+
+```bash
+cp .env.example .env.local
+```
+
+### 5. Run it
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000), sign up for an account,
+and join a room.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `app/(auth)/login`, `app/(auth)/signup` — auth pages
+- `app/rooms`, `app/rooms/[roomId]` — room list and chat view
+- `app/vocab` — saved vocabulary list
+- `app/api/translate`, `app/api/explain`, `app/api/ai-reply` — server routes
+  that call DeepL / Claude and keep API keys off the client
+- `lib/supabase` — browser, server, and admin (service-role) Supabase clients
+- `lib/claude.ts`, `lib/translate.ts` — API clients
+- `supabase/schema.sql` — database schema, RLS policies, and seed data
 
-## Learn More
+## Notes
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This is a portfolio-scale demo, not a production deployment: there's no
+moderation, rate limiting, or support for language pairs beyond Chinese↔English.
