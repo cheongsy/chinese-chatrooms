@@ -3,10 +3,10 @@ import type { Profile } from "@/lib/supabase/types";
 
 export default function UserList({
   people,
-  messageCounts,
+  unreadCounts,
 }: {
   people: Profile[];
-  messageCounts: Record<string, number>;
+  unreadCounts: Record<string, number>;
 }) {
   if (people.length === 0) {
     return <p className="text-sm text-gray-500">No one else has joined yet.</p>;
@@ -15,7 +15,7 @@ export default function UserList({
   return (
     <ul className="grid gap-2">
       {people.map((person) => {
-        const count = messageCounts[person.id] ?? 0;
+        const count = unreadCounts[person.id] ?? 0;
         return (
           <li key={person.id}>
             <Link

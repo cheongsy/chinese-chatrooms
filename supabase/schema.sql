@@ -199,6 +199,32 @@ create policy "participants can send messages"
 -- Note: AI-authored direct messages are inserted from a trusted server
 -- route using the service-role key, which bypasses RLS entirely.
 
+-- Conversation read markers (drives the unread-count badge) -----------------
+
+create table conversation_reads (
+  conversation_id uuid not null references conversations (id) on delete cascade,
+  user_id uuid not null references profiles (id) on delete cascade,
+  last_read_at timestamptz not null default now(),
+  primary key (conversation_id, user_id)
+);
+
+alter table conversation_reads enable row level security;
+
+create policy "users can read their own read markers"
+  on conversation_reads for select
+  to authenticated
+  using (auth.uid() = user_id);
+
+create policy "users can insert their own read markers"
+  on conversation_reads for insert
+  to authenticated
+  with check (auth.uid() = user_id);
+
+create policy "users can update their own read markers"
+  on conversation_reads for update
+  to authenticated
+  using (auth.uid() = user_id);
+
 -- Realtime -------------------------------------------------------------------
 
 alter publication supabase_realtime add table messages;
