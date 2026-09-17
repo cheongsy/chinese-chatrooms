@@ -58,6 +58,12 @@ export type DirectMessage = {
   created_at: string;
 };
 
+export type ConversationRead = {
+  conversation_id: string;
+  user_id: string;
+  last_read_at: string;
+};
+
 export type Database = {
   public: {
     Tables: {
@@ -113,6 +119,12 @@ export type Database = {
           content: string;
         };
         Update: Partial<DirectMessage>;
+        Relationships: [];
+      };
+      conversation_reads: {
+        Row: ConversationRead;
+        Insert: Partial<ConversationRead> & { conversation_id: string; user_id: string };
+        Update: Partial<ConversationRead>;
         Relationships: [];
       };
     };

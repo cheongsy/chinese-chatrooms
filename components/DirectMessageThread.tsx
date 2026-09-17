@@ -72,6 +72,22 @@ export default function DirectMessageThread({
               },
             ];
           });
+
+          // The thread is open and the new message just rendered, so treat
+          // it as read immediately rather than waiting for the next visit.
+          // supabase-js query builders are lazy (the request only fires once
+          // something consumes the thenable), so this must be awaited/caught
+          // rather than left as a bare statement.
+          if (row.sender_id !== currentUserId) {
+            supabase
+              .from("conversation_reads")
+              .upsert({
+                conversation_id: conversationId,
+                user_id: currentUserId,
+                last_read_at: new Date().toISOString(),
+              })
+              .then(() => {});
+          }
         }
       )
       .subscribe();
@@ -79,7 +95,7 @@ export default function DirectMessageThread({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [conversationId, supabase]);
+  }, [conversationId, currentUserId, supabase]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });

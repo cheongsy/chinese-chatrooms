@@ -80,6 +80,14 @@ export default async function ConversationPage({
         : { username: currentProfile?.username ?? "You", is_ai: false },
   }));
 
+  // Opening the thread marks everything sent so far as read, clearing the
+  // unread badge on the /messages list.
+  await supabase.from("conversation_reads").upsert({
+    conversation_id: conversation.id,
+    user_id: userData.user.id,
+    last_read_at: new Date().toISOString(),
+  });
+
   return (
     <>
       <NavBar />
