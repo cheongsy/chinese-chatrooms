@@ -26,6 +26,9 @@ export default function NavBar() {
         <Link href="/vocab" className="text-sm text-gray-600 hover:text-black">
           My Vocab
         </Link>
+        <Link href="/messages" className="text-sm text-gray-600 hover:text-black">
+          Messages
+        </Link>
       </div>
       <div className="flex gap-4 items-center">
         <Link href="/account" className="text-sm text-gray-600 hover:text-black">
