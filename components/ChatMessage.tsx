@@ -21,11 +21,16 @@ export default function ChatMessage({
   isOwn,
   showPinyin,
   currentUserId,
+  linkVocabToMessage = true,
 }: {
   message: ChatMessageData;
   isOwn: boolean;
   showPinyin: boolean;
   currentUserId: string;
+  // Vocab saved from a message links back via source_message_id, which
+  // has an FK to the public `messages` table. Direct messages live in a
+  // separate table, so DM threads pass false to skip that link.
+  linkVocabToMessage?: boolean;
 }) {
   const [savedChars, setSavedChars] = useState<Set<string>>(new Set());
 
@@ -55,7 +60,7 @@ export default function ChatMessage({
       hanzi: char,
       pinyin: charPinyin,
       translation,
-      source_message_id: message.id,
+      source_message_id: linkVocabToMessage ? message.id : null,
     });
   }
 

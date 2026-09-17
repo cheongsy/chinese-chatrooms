@@ -6,6 +6,7 @@ export type Profile = {
   target_lang: string;
   level: "beginner" | "intermediate" | "advanced";
   is_ai: boolean;
+  system_prompt: string | null;
   created_at: string;
 };
 
@@ -39,6 +40,21 @@ export type SavedVocab = {
   pinyin: string | null;
   translation: string | null;
   source_message_id: string | null;
+  created_at: string;
+};
+
+export type Conversation = {
+  id: string;
+  user_a_id: string;
+  user_b_id: string;
+  created_at: string;
+};
+
+export type DirectMessage = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  content: string;
   created_at: string;
 };
 
@@ -81,6 +97,22 @@ export type Database = {
         Row: SavedVocab;
         Insert: Partial<SavedVocab> & { user_id: string; hanzi: string };
         Update: Partial<SavedVocab>;
+        Relationships: [];
+      };
+      conversations: {
+        Row: Conversation;
+        Insert: Partial<Conversation> & { user_a_id: string; user_b_id: string };
+        Update: Partial<Conversation>;
+        Relationships: [];
+      };
+      direct_messages: {
+        Row: DirectMessage;
+        Insert: Partial<DirectMessage> & {
+          conversation_id: string;
+          sender_id: string;
+          content: string;
+        };
+        Update: Partial<DirectMessage>;
         Relationships: [];
       };
     };

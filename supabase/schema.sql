@@ -14,6 +14,10 @@ create table profiles (
   target_lang text not null default 'zh',
   level language_level not null default 'beginner',
   is_ai boolean not null default false,
+  -- General personality prompt used for 1:1 direct messages with an AI
+  -- persona. Only set for is_ai = true rows; room_ai_personas has a
+  -- separate, room-topic-flavored prompt used for chatroom replies.
+  system_prompt text,
   created_at timestamptz not null default now()
 );
 
@@ -130,17 +134,87 @@ create policy "users can delete their own saved vocab"
   to authenticated
   using (auth.uid() = user_id);
 
+-- Conversations (private 1:1 messaging) --------------------------------------
+
+create table conversations (
+  id uuid primary key default gen_random_uuid(),
+  user_a_id uuid not null references profiles (id) on delete cascade,
+  user_b_id uuid not null references profiles (id) on delete cascade,
+  created_at timestamptz not null default now(),
+  constraint distinct_participants check (user_a_id <> user_b_id),
+  -- Canonical ordering (always the smaller id first) so a pair of users
+  -- can only ever have one conversation row; application code sorts the
+  -- two ids before querying/inserting.
+  constraint ordered_participants check (user_a_id < user_b_id),
+  unique (user_a_id, user_b_id)
+);
+
+alter table conversations enable row level security;
+
+create policy "participants can read their conversations"
+  on conversations for select
+  to authenticated
+  using (auth.uid() = user_a_id or auth.uid() = user_b_id);
+
+create policy "users can create conversations they participate in"
+  on conversations for insert
+  to authenticated
+  with check (auth.uid() = user_a_id or auth.uid() = user_b_id);
+
+create table direct_messages (
+  id uuid primary key default gen_random_uuid(),
+  conversation_id uuid not null references conversations (id) on delete cascade,
+  sender_id uuid not null references profiles (id) on delete cascade,
+  content text not null,
+  created_at timestamptz not null default now()
+);
+
+create index direct_messages_conversation_id_created_at_idx on direct_messages (conversation_id, created_at);
+
+alter table direct_messages enable row level security;
+
+create policy "participants can read their messages"
+  on direct_messages for select
+  to authenticated
+  using (
+    exists (
+      select 1 from conversations c
+      where c.id = conversation_id
+        and (c.user_a_id = auth.uid() or c.user_b_id = auth.uid())
+    )
+  );
+
+create policy "participants can send messages"
+  on direct_messages for insert
+  to authenticated
+  with check (
+    sender_id = auth.uid()
+    and exists (
+      select 1 from conversations c
+      where c.id = conversation_id
+        and (c.user_a_id = auth.uid() or c.user_b_id = auth.uid())
+    )
+  );
+
+-- Note: AI-authored direct messages are inserted from a trusted server
+-- route using the service-role key, which bypasses RLS entirely.
+
 -- Realtime -------------------------------------------------------------------
 
 alter publication supabase_realtime add table messages;
+alter publication supabase_realtime add table direct_messages;
 
 -- Seed data: rooms + AI personas ---------------------------------------------
 
-insert into profiles (id, username, native_lang, target_lang, level, is_ai) values
-  ('00000000-0000-0000-0000-000000000001', 'Xiao Mei (AI)', 'zh', 'en', 'beginner', true),
-  ('00000000-0000-0000-0000-000000000002', 'Lao Wang (AI)', 'zh', 'en', 'intermediate', true),
-  ('00000000-0000-0000-0000-000000000003', 'Chef Chen (AI)', 'zh', 'en', 'beginner', true),
-  ('00000000-0000-0000-0000-000000000004', 'Ms. Liu (AI)', 'zh', 'en', 'advanced', true);
+insert into profiles (id, username, native_lang, target_lang, level, is_ai, system_prompt) values
+  ('00000000-0000-0000-0000-000000000001', 'Xiao Mei (AI)', 'zh', 'en', 'beginner', true,
+   'You are Xiao Mei, a friendly Chinese conversation partner. Reply only in simple Chinese (HSK1-2 vocabulary, short sentences), 1-2 sentences, staying encouraging and curious about whatever the learner brings up.'),
+  ('00000000-0000-0000-0000-000000000002', 'Lao Wang (AI)', 'zh', 'en', 'intermediate', true,
+   'You are Lao Wang, a Chinese conversation partner for an intermediate learner (HSK3-4). Reply only in Chinese, 2-3 sentences, and ask a follow-up question to keep the conversation going on whatever topic the learner raises.'),
+  ('00000000-0000-0000-0000-000000000003', 'Chef Chen (AI)', 'zh', 'en', 'beginner', true,
+   'You are Chef Chen, a friendly Chinese conversation partner who loves food, chatting with a beginner learner. Reply only in simple Chinese, 1-2 short sentences, and feel free to bring the conversation back to food when it fits naturally.'),
+  ('00000000-0000-0000-0000-000000000004', 'Ms. Liu (AI)', 'zh', 'en', 'advanced', true,
+   'You are Ms. Liu, a Chinese conversation partner for an advanced learner. Reply only in fluent, natural Chinese with nuanced vocabulary and idioms, 2-4 sentences, challenging the learner with follow-up questions on whatever topic comes up.');
 
 insert into rooms (id, name, topic, level, description) values
   ('10000000-0000-0000-0000-000000000001', 'Beginner Small Talk', 'daily life', 'beginner', 'Practice greetings, introductions, and everyday small talk in simple Chinese.'),
